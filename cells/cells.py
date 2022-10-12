@@ -74,7 +74,8 @@ class Cells:
 
     def cvector_et(self, x_bin, batch_size=500):
         phi_bins = x_bin
-        img_list = list()
+        vec_list = list()
+        v_label_lsit = list()
         for batch in self.events.iterate(step_size=batch_size, library="np"):
             all_events= list()
             for i in range(len(batch['cell_phi'])):
@@ -85,7 +86,17 @@ class Cells:
                     statistic='sum')
                     
                 all_events += [HB.statistic]
-            img_list +=[np.stack(all_events, axis=0)]
-        truth_met_grid = self.events.arrays(["metTruth_et"], library="pd").to_numpy()*self.unit_scale
+            vec_list +=[np.stack(all_events, axis=0)]
         
-        return np.concatenate(img_list, axis=0)*self.unit_scale, truth_met_grid #truth_met_grid.unstack(level=1).values # img and label
+            batch_label = list()
+            for i in range(len(batch['metTruth_phi'])):
+                HB = stats.binned_statistic(
+                                        batch['metTruth_phi'][i],
+                                        bins = phi_bins,
+                                        values=batch["metTruth_et"][i],
+                                        statistic='sum')
+                batch_label += [HB.statistic]
+            
+            v_label_lsit +=[np.stack(batch_label, axis=0)]
+        
+        return np.concatenate(vec_list, axis=0)*self.unit_scale, np.concatenate(v_label_lsit, axis=0)*self.unit_scale #truth_met_grid.unstack(level=1).values # img and label

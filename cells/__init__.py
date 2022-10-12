@@ -1,2 +1,2 @@
-from .cells import Cells
+from .cells import *
 
