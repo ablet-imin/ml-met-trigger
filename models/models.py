@@ -20,8 +20,9 @@ def DNN(h_dim, out_dim, activation='relu', L1L2='None' ):
                      )
     #outpu layer
     model_nn.add(Dense(out_dim,
-                       kernel_regularizer=L1L2,
-                       bias_regularizer=L1L2
+                        activation = 'linear',
+                       #kernel_regularizer=L1L2,
+                       #bias_regularizer=L1L2
                       )
                 )
     return model_nn
