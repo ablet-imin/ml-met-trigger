@@ -10,6 +10,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+wandb/
 */.DS_Store/
 outputs_et/
 outputs/
