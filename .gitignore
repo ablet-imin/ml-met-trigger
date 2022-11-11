@@ -11,6 +11,8 @@ __pycache__/
 # Distribution / packaging
 .Python
 wandb/
+data/
+outputs*/
 */.DS_Store/
 outputs_et/
 outputs/
