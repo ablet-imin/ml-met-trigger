@@ -5,12 +5,17 @@ __pycache__/
 .DS_Store
 # C extensions
 *.so
+*.root
+*.h5
 #plots
 *.png
 
 # Distribution / packaging
 .Python
 wandb/
+artifacts/
+met_*/
+train_*/
 data/
 outputs*/
 */.DS_Store/

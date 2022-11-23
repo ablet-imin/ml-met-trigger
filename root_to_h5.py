@@ -28,10 +28,23 @@ def main():
     print(f"Cell image shape: {cell_imgs.shape}")
     print(f"Image label shape: {cell_labels.shape}")
     
-    h5_datasetkeys = {'images':cell_imgs,
-                      'labels': cell_labels
+    from sklearn.model_selection import train_test_split
+    
+    x_train, x_test, y_train, y_test = train_test_split(images, labels,
+                                        test_size=0.2, random_state=42,
+                                        shuffle=True
+                                        )
+    
+    h5_train_dataset = {'images':x_train,
+                      'labels': y_train
                      }
-    save_h5(args.output, h5_datasetkeys)
+    save_h5(f"train_{args.output}", h5_train_dataset)
+    
+    h5_test_dataset = {'images':x_test,
+                      'labels': y_test
+                     }
+    save_h5(f"test_{args.output}", h5_test_dataset)
+    
     
 if __name__ == '__main__':
     main()
