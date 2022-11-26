@@ -5,8 +5,8 @@ import gc
 from scipy import stats
 
 
-def cell_data(events,phi_bins, eta_bins, weight,
-                statistic='sum', unit="GeV", batch_size=1000):
+def cell_data(events,phi_bins, eta_bins, weight, label,
+                statistic='sum', unit=None, batch_size=1000):
     unit_scale = 0.001 if unit == "GeV" else 1
     def _batch_cimg( data):
         all_events = list()
@@ -26,8 +26,7 @@ def cell_data(events,phi_bins, eta_bins, weight,
     gc.collect()
     
     # read all labels
-    truth_met_grid = events.arrays(
-        ["metTruth_ex", "metTruth_ey"], library="pd").to_numpy() * unit_scale
+    truth_met_grid = events[label].array(library="np") * unit_scale
     return np.concatenate(img_list, axis=0) * \
         unit_scale, truth_met_grid
 
