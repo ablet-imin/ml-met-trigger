@@ -14,7 +14,7 @@ def main():
             )
             
     parser.add_argument('--input_file', help='root file')
-    parser.add_argument('--output', help='h5 file name')
+    parser.add_argument('--output_dir', help='dir to save test,train files')
     parser.add_argument('--tree', default='ntuple', help='tree name')
     parser.add_argument('--stat', type=str, choices=['sum', 'mean'],
                                 default='sum', help='tree name')
@@ -50,12 +50,12 @@ def main():
     h5_train_dataset = {'images':x_train,
                       'labels': y_train
                      }
-    save_h5(f"data/train_{args.output}", h5_train_dataset)
+    save_h5(f"{args.output_dir}/train.h5", h5_train_dataset)
     
     h5_test_dataset = {'images':x_test,
                       'labels': y_test
                      }
-    save_h5(f"data/test_{args.output}", h5_test_dataset)
+    save_h5(f"{args.output_dir}/test.h5", h5_test_dataset)
     
     
 if __name__ == '__main__':

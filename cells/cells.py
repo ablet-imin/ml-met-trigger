@@ -6,13 +6,14 @@ from scipy import stats
 
 
 def cell_data(events,phi_bins, eta_bins, weight, label,
+                eta='cell_eta', phi='cell_phi',
                 statistic='sum', unit=None, batch_size=1000):
     unit_scale = 0.001 if unit == "GeV" else 1
     def _batch_cimg( data):
         all_events = list()
-        for i in range(len(data['cell_phi'])):
+        for i in range(len(data[phi])):
             HB = stats.binned_statistic_2d(
-                data['cell_eta'][i], data['cell_phi'][i],
+                data[eta][i], data[phi][i],
                 bins=[eta_bins,phi_bins],
                 values=data[weight][i],
                 statistic=statistic)
