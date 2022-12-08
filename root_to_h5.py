@@ -18,22 +18,32 @@ def main():
     parser.add_argument('--tree', default='ntuple', help='tree name')
     parser.add_argument('--stat', type=str, choices=['sum', 'mean'],
                                 default='sum', help='tree name')
+    parser.add_argument('--unit', default=None,
+                                help='GeV, convert to GeV.')
     parser.add_argument('--var', type=str,
                                 default='cell_et', help='branch name in the tree')
     parser.add_argument('--label', type=str,
                                 default='metTruth_et', help='branch name in the tree')
     parser.add_argument('--phi_bins', type=int, default=32, help='number of bins for phi')
     parser.add_argument('--eta_bins', type=int, default=50, help='number of bins for eta')
+    parser.add_argument('--eta', type=str,
+                                default='cell_eta', help='eta branch name in the tree')
+    parser.add_argument('--phi', type=str,
+                                default='cell_phi', help='phi branch name in the tree')
     
     args = parser.parse_args()
         
     x_bin = np.linspace(-3.15, 3.15, num=args.phi_bins+1)
     y_bin = np.linspace(-5, 5, num=args.eta_bins+1)
     
+    if args.unit == 'GeV':
+        args.stat = 'sum'
+    
     with uproot.open(args.input_file+":"+args.tree) as events:
         print(events.keys())
-        images, labels = cell_data(events, x_bin,
-                                        y_bin, weight=args.var,
+        images, labels = cell_data(events, x_bin, y_bin, unit= args.unit,
+                eta=args.eta, phi=args.phi,
+                                        weight=args.var,
                                         label=args.label,
                                          statistic=args.stat, batch_size=1000)
     
@@ -42,20 +52,20 @@ def main():
     
     from sklearn.model_selection import train_test_split
     
-    x_train, x_test, y_train, y_test = train_test_split(images, labels,
-                                        test_size=0.2, random_state=42,
-                                        shuffle=True
-                                        )
+    #x_train, x_test, y_train, y_test = train_test_split(images, labels,
+    #                                    test_size=0.2, random_state=42,
+    #                                    shuffle=True
+    #                                    )
     
-    h5_train_dataset = {'images':x_train,
-                      'labels': y_train
+    h5_train_dataset = {'images':images,
+                      'labels': labels
                      }
     save_h5(f"{args.output_dir}/train.h5", h5_train_dataset)
     
-    h5_test_dataset = {'images':x_test,
-                      'labels': y_test
-                     }
-    save_h5(f"{args.output_dir}/test.h5", h5_test_dataset)
+    #h5_test_dataset = {'images':x_test,
+    #                  'labels': y_test
+    #                 }
+    #save_h5(f"{args.output_dir}/test.h5", h5_test_dataset)
     
     
 if __name__ == '__main__':

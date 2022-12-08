@@ -99,7 +99,7 @@ augmented_clt = augmented_cell.Define("clt_theta", "getTheta(calo.cluster.x,calo
 
 
 augmented_clt.Snapshot("ntuple", args.output,
-    ["cell_theta", "cell_et", "cell_ex", "cell_phi","cell_sigma",
+    ["cell_theta", "cell_et", "cell_ex", "cell_ey", "cell_phi","cell_sigma",
     "cell_eta", "metTruth_ex", "metTruth_ey", "metTruth_et",
     "clt_et", "clt_ex", "clt_ey", "clt_phi", "clt_eta",
     "hltMet_ex", "hltMet_ey", "hltMet_et"])
