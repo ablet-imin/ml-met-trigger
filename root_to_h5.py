@@ -3,9 +3,12 @@ import os, sys
 import numpy as np
 import h5py
 import argparse
-import uproot
+import uproot4 as uproot
 from cells import cell_data
 from util import save_h5
+from scipy import stats
+import gc
+import sys
 
 def main():
     parser = argparse.ArgumentParser(
@@ -14,59 +17,92 @@ def main():
             )
             
     parser.add_argument('--input_file', help='root file')
-    parser.add_argument('--output_dir', help='dir to save test,train files')
+    parser.add_argument('--output', help='dir to save test,train files')
     parser.add_argument('--tree', default='ntuple', help='tree name')
-    parser.add_argument('--stat', type=str, choices=['sum', 'mean'],
-                                default='sum', help='tree name')
     parser.add_argument('--unit', default=None,
                                 help='GeV, convert to GeV.')
-    parser.add_argument('--var', type=str,
-                                default='cell_et', help='branch name in the tree')
-    parser.add_argument('--label', type=str,
-                                default='metTruth_et', help='branch name in the tree')
-    parser.add_argument('--phi_bins', type=int, default=32, help='number of bins for phi')
+    parser.add_argument('--phi_bins', type=int, default=64, help='number of bins for phi')
     parser.add_argument('--eta_bins', type=int, default=50, help='number of bins for eta')
-    parser.add_argument('--eta', type=str,
-                                default='cell_eta', help='eta branch name in the tree')
-    parser.add_argument('--phi', type=str,
-                                default='cell_phi', help='phi branch name in the tree')
     
     args = parser.parse_args()
         
     x_bin = np.linspace(-3.15, 3.15, num=args.phi_bins+1)
     y_bin = np.linspace(-5, 5, num=args.eta_bins+1)
     
-    if args.unit == 'GeV':
-        args.stat = 'sum'
+    def _batch_cimg( data, phi_bins, eta_bins, weight,
+                    eta='cells_eta', phi='cells_phi',
+                    statistic='sum'):
+        all_events = list()
+        for i in range(len(data[phi])):
+            HB = stats.binned_statistic_2d(
+                data[eta][i], data[phi][i],
+                bins=[eta_bins,phi_bins],
+                values=data[weight][i],
+                statistic=statistic)
+            all_events += [HB.statistic]
+        print('batch complete....')
+        return np.stack(all_events, axis=0)
     
-    with uproot.open(args.input_file+":"+args.tree) as events:
-        print(events.keys())
-        images, labels = cell_data(events, x_bin, y_bin, unit= args.unit,
-                eta=args.eta, phi=args.phi,
-                                        weight=args.var,
-                                        label=args.label,
-                                         statistic=args.stat, batch_size=1000)
     
-    print(f"Cell image shape: {images.shape}")
-    print(f"Image label shape: {labels.shape}")
+    unit_scale = 0.001 if args.unit == "GeV" else 1.
     
-    from sklearn.model_selection import train_test_split
+    METS = ["MET_Calo_pt", "MET_Calo_px", "MET_Calo_py",
+                "met_truth_pt", "met_truth_px", "met_truth_py"]
+    expressions=["cells_et", "cells_ex", "cells_ey", "cells_eta", "cells_phi"]
+    expressions= expressions + METS # include met branches
     
-    #x_train, x_test, y_train, y_test = train_test_split(images, labels,
-    #                                    test_size=0.2, random_state=42,
-    #                                    shuffle=True
-    #                                    )
+    et_list = []
+    ex_list = []
+    ey_list = []
+    _labels = {}
+    for met in METS:
+        _labels[met] = []
+    tree  = args.input_file+":"+args.tree
+    for batch in uproot.iterate(tree, expressions=expressions,
+                                step_size='1 GB', library="np"):
+        #get et
+        _et = _batch_cimg(batch, x_bin, y_bin,
+                            weight="cells_et",
+                            statistic='sum')
+        et_list += [_et]
+        gc.collect()
+        
+        #get ex
+        _ex = _batch_cimg(batch, x_bin, y_bin,
+                            weight="cells_ex",
+                            statistic='sum')
+        ex_list += [_ex]
+        
+        #get ey
+        _ey = _batch_cimg(batch, x_bin, y_bin,
+                            weight="cells_ey",
+                            statistic='sum')
+        ey_list += [_ey]
+        
+        # read all labels
+        for met in METS:
+            _labels[met] = _labels[met] + [batch[met] * unit_scale]
+        
+        gc.collect()
+        
     
-    h5_train_dataset = {'images':images,
-                      'labels': labels
+    images_et  = np.concatenate(et_list, axis=0)
+    images_ex  = np.concatenate(ex_list, axis=0)
+    images_ey  = np.concatenate(ey_list, axis=0)
+    
+    print(f"et shape: {images_et.shape}")
+    h5_train_dataset = {'et': images_et,
+                        'ex': images_ex,
+                        'ey': images_ey
                      }
-    save_h5(f"{args.output_dir}/train.h5", h5_train_dataset)
+                     
+    del et_list, ex_list, ey_list
     
-    #h5_test_dataset = {'images':x_test,
-    #                  'labels': y_test
-    #                 }
-    #save_h5(f"{args.output_dir}/test.h5", h5_test_dataset)
-    
+    for met in METS:
+        h5_train_dataset[met] = np.concatenate(_labels[met], axis=0)
+                     
+    save_h5(f"{args.output}", h5_train_dataset)
+        
     
 if __name__ == '__main__':
     main()

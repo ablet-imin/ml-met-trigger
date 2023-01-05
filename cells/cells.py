@@ -21,13 +21,16 @@ def cell_data(events,phi_bins, eta_bins, weight, label,
         return np.stack(all_events, axis=0)
         
     img_list = []
-    for batch in events.iterate(step_size=batch_size, library="np"):
-            _imgs = _batch_cimg(batch)
-            img_list += [_imgs]
-    gc.collect()
+    truth_met_grid = []
+    for batch in events.iterate(tree, expressions=[eta, phi, weight, label],
+                                step_size=batch_size, library="np"):
+        _imgs = _batch_cimg(batch)
+        img_list += [_imgs]
+            
+        gc.collect()
     
-    # read all labels
-    truth_met_grid = events[label].array(library="np") * unit_scale
+        # read all labels
+        truth_met_grid.append( batch[label] * unit_scale)
     return np.concatenate(img_list, axis=0) * \
-        unit_scale, truth_met_grid
+        unit_scale, np.concatenate(truth_met_grid,axis=0)
 
