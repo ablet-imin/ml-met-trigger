@@ -6,7 +6,7 @@ run_on_file(){
                         --output data/ttbar/train-${task_id}.h5
 }
 
-for i in 0 10 20 30 40 50 60 70
+for i in {0..25}
 do
     run_on_file $i
     echo "$i -- OK"

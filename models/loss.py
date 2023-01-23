@@ -9,25 +9,15 @@ def tf_sqrt(X, axis=-1):
     Y = tf.math.reduce_sum(Y, axis=axis, keepdims=True)
     return tf.math.sqrt(Y)
 
-class MeanSquaredError(tf.keras.losses.Loss):
-    def call(self, y_true, y_pred):
-        met_true = tf_sqrt(y_true, 1)
-        met_pred = tf_sqrt(y_pred, 1)
-        met_loss = tf.keras.losses.MeanAbsolutePercentageError()(met_true, met_pred)
-        mse_loss_x = tf.keras.losses.MeanSquaredError()(y_true[:,0], y_pred[:,0])
-        mse_loss_y = tf.keras.losses.MeanSquaredError()(y_true[:,1], y_pred[:,1])
-        return mse_loss_x+mse_loss_y+met_loss
 
     
 class MSPE_ET(tf.keras.losses.Loss):
+    def __init__(self):
+        super().__init__()
     def call(self, y_true, y_pred):
         relative = tf.math.square((y_true-y_pred))
-        relative = tf.divide(relative,y_true)
-        _loss = tf.reduce_mean(relative, axis=-1)
+        relative = tf.math.divide(relative,tf.math.abs(y_true))
+        _loss = tf.reduce_sum(relative)
         return _loss
-class MeanSquaredError_ET(tf.keras.losses.Loss):
-    def call(self, y_true, y_pred):
-        met_MSPE = MSPE_ET()(y_true, y_pred)
-        mse_MSE = tf.keras.losses.MeanSquaredError()(y_true, y_pred)
-        return 0.5*met_MSPE+0.5*mse_MSE
+
 
