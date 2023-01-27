@@ -48,12 +48,16 @@ def main():
     
     METS = ["MET_Calo_pt", "MET_Calo_px", "MET_Calo_py",
                 "met_truth_pt", "met_truth_px", "met_truth_py"]
-    expressions=["cells_et", "cells_ex", "cells_ey", "cells_eta", "cells_phi"]
+    expressions=["cells_et", "cells_ex", "cells_ey",
+     "cells_eta", "cells_phi", "cells_totalNoise"]
     expressions= expressions + METS # include met branches
     
     et_list = []
     ex_list = []
     ey_list = []
+    eta_list = []
+    phi_list = []
+    noise_list = []
     _labels = {}
     for met in METS:
         _labels[met] = []
@@ -79,6 +83,25 @@ def main():
                             statistic='sum')
         ey_list += [_ey]
         
+        #get phy
+        _phi = _batch_cimg(batch, x_bin, y_bin,
+                            weight="cells_phi",
+                            statistic='mean')
+        phi_list += [_phi]
+        
+        #get eta
+        _eta = _batch_cimg(batch, x_bin, y_bin,
+                            weight="cells_eta",
+                            statistic='mean')
+        eta_list += [_eta]
+        
+        #get noise
+        _noise = _batch_cimg(batch, x_bin, y_bin,
+                            weight="cells_totalNoise",
+                            statistic='sum')
+        noise_list += [_noise]
+        
+        
         # read all labels
         for met in METS:
             _labels[met] = _labels[met] + [batch[met] * unit_scale]
@@ -89,14 +112,20 @@ def main():
     images_et  = np.concatenate(et_list, axis=0)
     images_ex  = np.concatenate(ex_list, axis=0)
     images_ey  = np.concatenate(ey_list, axis=0)
+    images_eta  = np.concatenate(eta_list, axis=0)
+    images_phi  = np.concatenate(phi_list, axis=0)
+    images_noise  = np.concatenate(noise_list, axis=0)
     
     print(f"et shape: {images_et.shape}")
     h5_train_dataset = {'et': images_et,
                         'ex': images_ex,
-                        'ey': images_ey
+                        'ey': images_ey,
+                        'phi': images_phi,
+                        'eta': images_eta,
+                        'noise': images_noise
                      }
                      
-    del et_list, ex_list, ey_list
+    del et_list, ex_list, ey_list, eta_list,phi_list,noise_list
     
     for met in METS:
         h5_train_dataset[met] = np.concatenate(_labels[met], axis=0)
