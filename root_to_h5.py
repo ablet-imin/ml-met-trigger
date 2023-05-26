@@ -3,13 +3,17 @@ import os, sys
 import numpy as np
 import h5py
 import argparse
-import uproot4 as uproot
-from cells import cell_data
-from util import save_h5
+import uproot as uproot
 from scipy import stats
 import gc
 import sys
 
+def save_h5(out_file, dataset:dict):
+    h5f = h5py.File(out_file, 'w')
+    for data_name, data_values in dataset.items():
+        h5f.create_dataset(data_name, data=data_values)
+    h5f.close()
+    
 def main():
     parser = argparse.ArgumentParser(
             prog = 'root_to_h5.py',
@@ -47,7 +51,10 @@ def main():
     unit_scale = 0.001 if args.unit == "GeV" else 1.
     
     METS = ["MET_Calo_pt", "MET_Calo_px", "MET_Calo_py",
-                "met_truth_pt", "met_truth_px", "met_truth_py"]
+                "met_truth_pt", "met_truth_px", "met_truth_py",
+                "pufitCalo422_pt","pufitCalo422_px", "pufitCalo422_py", "pufitCalo422SK_pt",
+                "pufitCalo422SK_px", "pufitCalo422SK_py"]
+                
     expressions=["cells_et", "cells_ex", "cells_ey",
      "cells_eta", "cells_phi", "cells_totalNoise"]
     expressions= expressions + METS # include met branches
@@ -64,12 +71,6 @@ def main():
     tree  = args.input_file+":"+args.tree
     for batch in uproot.iterate(tree, expressions=expressions,
                                 step_size='1 GB', library="np"):
-        #get et
-        _et = _batch_cimg(batch, x_bin, y_bin,
-                            weight="cells_et",
-                            statistic='sum')
-        et_list += [_et]
-        gc.collect()
         
         #get ex
         _ex = _batch_cimg(batch, x_bin, y_bin,
@@ -83,7 +84,15 @@ def main():
                             statistic='sum')
         ey_list += [_ey]
         
-        #get phy
+        #get et
+        _et = np.sqrt(_ex*_ex+_ey*_ey)
+        #_et = _batch_cimg(batch, x_bin, y_bin,
+        #                    weight="cells_et",
+        #                    statistic='sum')
+        et_list += [_et]
+        gc.collect()
+        
+        #get phi
         _phi = _batch_cimg(batch, x_bin, y_bin,
                             weight="cells_phi",
                             statistic='mean')

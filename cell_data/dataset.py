@@ -12,6 +12,8 @@ def _get_data(filepath, labelkey):
         noise = np.array(h5f['noise'])
         label = np.array(h5f[labelkey])
         #noise = et/noise
+        eta = np.nan_to_num(eta)
+        phi = np.nan_to_num(phi)
     return et, ex, ey, noise,  phi, eta, label
     
 
@@ -23,8 +25,8 @@ def _get_data_all(filepath, labelkey):
             et += [np.array(h5f['et'])]
             ex += [np.array(h5f['ex'])]
             ey += [np.array(h5f['ey'])]
-            eta += [np.array(h5f['eta'])]
-            phi += [np.array(h5f['phi'])]
+            eta += [np.nan_to_num(np.array(h5f['eta']))]
+            phi += [np.nan_to_num(np.array(h5f['phi']))]
             noise += [np.array(h5f['noise'])]
             label += [np.array(h5f[labelkey])]
     return (np.concatenate(et, axis=0),
